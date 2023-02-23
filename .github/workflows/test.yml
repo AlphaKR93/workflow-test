@@ -76,6 +76,10 @@ jobs:
           check-latest: true
           cache: 'gradle'
       
+      - name: Setup Gradle
+        run: |
+          cd ${{ env.MAIN }} && ./gradlew
+      
       - name: Check Gradle Wrapper Version
         id: wrapper
         run: |
