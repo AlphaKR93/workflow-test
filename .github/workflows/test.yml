@@ -3,8 +3,6 @@ name: test
 on:
   push:
   workflow_dispatch:
-  schedule:
-    - cron: "*/20 * * * *"
 
 env:
   EDITED_PUFFERFISH: true
@@ -69,7 +67,6 @@ jobs:
           repository: ${{ env.MAIN_REPO }}
           path: ${{ env.MAIN }}
           ref: ${{ env.MAIN_BRANCH }}
-          token: ${{ secrets.GH_PAT }}
 
       - name: Setup Java
         uses: actions/setup-java@v3
