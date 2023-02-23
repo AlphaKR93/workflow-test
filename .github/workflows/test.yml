@@ -1,0 +1,112 @@
+name: test
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/20 * * * *"
+
+env:
+  EDITED_PUFFERFISH: true
+
+  OS: ubuntu-latest
+
+  MAIN: Andromeda
+  MAIN_REPO: TeamEarendel/Andromeda
+  MAIN_BRANCH: ver/1.19.3
+
+  GIT_EMAIL: alphakr93@gmail.com
+  GIT_NAME: AlphaKR93
+
+  JDK: 19.0.1+10
+  JDK_DIST: temurin
+  JDK_REPO: adoptium/temurin19-binaries
+
+  WRAPPER_REPO: gradle/gradle
+  SHADOW_REPO: johnrengelman/shadow
+
+  PAPERWEIGHT_REPO: PaperMC/Paperweight
+  PAPERCLIP_REPO: PaperMC/Paperclip
+
+  TINY_REPO: FabricMC/tiny-remapper
+  TINY_BUILD_GRADLE: https://raw.githubusercontent.com/FabricMC/tiny-remapper/master/build.gradle
+
+  PAPER_REPO: PaperMC/Paper
+  PAPER_BRANCH: master
+
+  PURPUR_REPO: PurpurMC/Purpur
+  PURPUR_BRANCH: ver/1.19.3
+
+  PUFFERFISH_REPO: pufferfish-gg/Pufferfish
+  PUFFERFISH_BRANCH: ver/1.19
+
+jobs:
+
+  setup:
+    name: Initialize Actions
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.setup.outputs.runner }}
+    steps:
+      - name: Initialize Variables
+        id: setup
+        run: |
+          echo "runner=${{ env.OS }}" >> $GITHUB_OUTPUT
+
+  check-dependencies:
+    name: Check Dependencies
+    steps:
+
+      - name: Initialize Variables
+        id: init
+        run: |
+          echo "runner=${{ env.OS }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout ${{ env.MAIN }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.MAIN_REPO }}
+          path: ${{ env.MAIN }}
+          ref: ${{ env.MAIN_BRANCH }}
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JDK_DIST }}
+          java-version: ${{ env.JDK }}
+          check-latest: true
+          cache: 'gradle'
+      
+      - name: Check Gradle Wrapper Version
+        id: wrapper
+        run: |
+          latest=$(curl --silent https://services.gradle.org/versions/current | jq -r ".version")
+          current=$(cd ${{ env.MAIN }} && ./gradlew -v | grep Gradle | grep -v ! | cut -d " " -f 2)
+          echo "Current: $current, Latest: $latest"
+
+          if [ "$latest" != "$current" ]; then
+            echo "latest=$latest" >> $GITHUB_OUTPUT
+            echo "current=$current" >> $GITHUB_OUTPUT
+            echo "Need Upstream"
+          fi
+
+    needs: setup
+    runs-on: ${{ needs.setup.outputs.runner }}
+    outputs:
+      runner: ${{ steps.init.outputs.runner }}
+
+      jdk: ${{ steps.jdk.outputs.latest }}
+      wrapper: ${{ steps.wrapper.outputs.latest }}
+      shadow: ${{ steps.shadow.outputs.latest }}
+      paperweight: ${{ steps.paperweight.outputs.latest }}
+      paperclip: ${{ steps.paperclip.outputs.latest }}
+      tiny: ${{ steps.tiny.outputs.latest }}
+
+      jdk_current: ${{ steps.jdk.outputs.current }}
+      wrapper_current: ${{ steps.wrapper.outputs.current }}
+      shadow_current: ${{ steps.shadow.outputs.current }}
+      paperweight_current: ${{ steps.paperweight.outputs.current }}
+      paperclip_current: ${{ steps.paperclip.outputs.current }}
+      tiny_current: ${{ steps.tiny.outputs.current }}
